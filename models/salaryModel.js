@@ -2,10 +2,11 @@ import mongoose from "mongoose";
 
 const salarySchme = new mongoose.Schema(
   {
-   empId: {
-  type: String,
-  required: true
-},
+   
+    empId: {
+      type: String,
+      required: true,
+    },
     basicSalary: {
       type: String,
       required: true,
@@ -25,7 +26,7 @@ const salarySchme = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // Automatically adds `createdAt` and `updatedAt`
+    timestamps: true,
   }
 );
 

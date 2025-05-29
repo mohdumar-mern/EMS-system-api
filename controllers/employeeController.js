@@ -264,34 +264,46 @@ export const updateEmployee = expressAsyncHandler(async (req, res) => {
   }
 });
 
-// get Employee by department id
-export const getEmployeeByDepartmentId = expressAsyncHandler(
-  async (req, res) => {
-    try {
-      const employees = await Employee.find({ department: req.params.id });
+// ✅ Get Employees by Department ID
+export const getEmployeeByDepartmentId = expressAsyncHandler(async (req, res) => {
+  try {
+    const departmentId = req.params.id;
 
-      if (!employees) {
-        return res.status(404).json({
-          success: false,
-          message: "No employees found",
-        });
-      }
-
-      res.status(200).json({
-        success: true,
-        message: "Employees department fetched successfully",
-        totalEmployeesDepartment: employees.length,
-        employees,
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({
+    // ✅ Step 1: Check if department exists (optional but good practice)
+    const departmentExists = await Department.exists({ _id: departmentId });
+    if (!departmentExists) {
+      return res.status(404).json({
         success: false,
-        error: "Internal Server Error",
+        message: "Department not found",
       });
     }
+
+    // ✅ Step 2: Get employees belonging to this department
+    const employees = await Employee.find({ department: departmentId }).select("emp_name empId");
+
+    if (!employees.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No employees found for this department",
+      });
+    }
+
+    // ✅ Step 3: Send response
+    res.status(200).json({
+      success: true,
+      message: "Employees fetched successfully for the department",
+      totalEmployeesDepartment: employees.length,
+      employees,
+    });
+  } catch (error) {
+    console.error("Error fetching employees by department:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+    });
   }
-);
+});
+
 
 
 // Delete Employee

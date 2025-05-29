@@ -5,8 +5,9 @@ import { addSalary, getSalary, getSalaryByEmpId } from '../controllers/salaryCon
 import { protect } from '../middlewares/authMiddleware.js'
 
 router.get('/', protect, getSalary)
-router.get('/:empId', protect, getSalaryByEmpId)
-router.post('/', protect, addSalary)
+router.get('/:empId/history', protect, getSalaryByEmpId)
+router.post('/add', protect, addSalary)
+
 
 
 

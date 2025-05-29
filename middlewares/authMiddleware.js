@@ -10,7 +10,7 @@ dotenv.config();
 export const protect = expressAsyncHandler(async (req, res, next) => {
   try {
     // Ensure you have `cookie-parser` middleware in use in your app.js
-    const token = req.headers.authorization?.split(" ")[1] || req.cookies?.token;
+    const token = req.headers.authorization?.split(" ")[1] ;
 
     if (!token) {
       return res
