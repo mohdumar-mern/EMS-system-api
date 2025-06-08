@@ -8,8 +8,7 @@ import Department from "../models/departmentModel.js";
 
 // Add new employee
 export const addEmployee = expressAsyncHandler(async (req, res) => {
-  // console.log("req.body:", req.body);
-  // console.log("req.file:", req.file);
+
 
   try {
     const {
@@ -148,7 +147,8 @@ export const getEmployee = expressAsyncHandler(async (req, res) => {
 // Get Employee by id
 export const getEmployeeById = expressAsyncHandler(async (req, res) => {
   try {
-    const employee = await Employee.findById(req.params.id)
+    let employee
+     employee = await Employee.findById(req.params.id)
       .populate({
         path: "userId",
         select: "_id name email profile role", // select fields from User
@@ -157,6 +157,18 @@ export const getEmployeeById = expressAsyncHandler(async (req, res) => {
         path: "department",
         select: "_id dep_name", // select fields from Department
       });
+      if(!employee){
+        employee=await Employee.find({userId:req.params.id})
+          .populate({
+            path: "userId",
+            select: "_id name email profile role", // select fields from User
+          })
+          .populate({
+            path: "department",
+            select: "_id dep_name", // select fields from Department
+          });
+      }
+      
 
     if (!employee) {
       return res.status(404).json({
@@ -181,7 +193,6 @@ export const getEmployeeById = expressAsyncHandler(async (req, res) => {
 
 // Update Employee
 export const updateEmployee = expressAsyncHandler(async (req, res) => {
-  console.log("Update Employee Request Body:", req.body);
   try {
     const {
       name,
@@ -303,7 +314,6 @@ export const getEmployeeByDepartmentId = expressAsyncHandler(async (req, res) =>
     });
   }
 });
-
 
 
 // Delete Employee

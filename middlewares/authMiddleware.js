@@ -9,8 +9,10 @@ dotenv.config();
 // Middleware to protect routes
 export const protect = expressAsyncHandler(async (req, res, next) => {
   try {
-    // Ensure you have `cookie-parser` middleware in use in your app.js
-    const token = req.headers.authorization?.split(" ")[1] ;
+  const token = req.headers.authorization?.startsWith("Bearer ")
+  ? req.headers.authorization.split(" ")[1]
+  : req.headers.authorization;
+
 
     if (!token) {
       return res
@@ -33,7 +35,6 @@ export const protect = expressAsyncHandler(async (req, res, next) => {
     req.user = user; // Attach user to request
     next();
   } catch (error) {
-    console.error("Token verification error:", error);
     res.status(401).json({ message: "Unauthorized access", success: false });
   }
 });

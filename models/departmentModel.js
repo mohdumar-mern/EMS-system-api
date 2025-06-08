@@ -1,4 +1,7 @@
 import mongoose from "mongoose";
+import Employee from "./employeeModel.js";
+import Leave from "./LeaveModel.js";
+import Salary from "./salaryModel.js";
 
 const departmentSchema = new mongoose.Schema(
   {
@@ -22,9 +25,24 @@ const departmentSchema = new mongoose.Schema(
   }
 );
 
-// Optional: Add index to dep_name if frequently searched
-// departmentSchema.index({ dep_name: 1 });
+// departmentSchema.pre(
+//   "deleteOne",
+//   { document: true, query: true },
+//   async (next) => {
+//    try {
+//     const employee = Employee.find({ department: this._id });
+//     const employeeIds = employee.map((emp) => emp._id);
+//     const empIds = employee.map((emp) => emp.empId);
 
+//     await Employee.deleteMany({ department: this._id });
+//     await Leave.deleteMany({ employeeId: { $in: empIds } });
+//     await Salary.deleteMany({ employeeId: { $in: employeeIds } });
+//     next();
+//    } catch (error) {
+//     console.log(error)
+//    }
+//   }
+// );
 const Department = mongoose.model("Department", departmentSchema);
 
 export default Department;

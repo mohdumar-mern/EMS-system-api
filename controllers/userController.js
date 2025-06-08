@@ -32,13 +32,6 @@ export const register = expressAsyncHandler(async (req, res) => {
     // generate Token
     const token = generateToken(savedUser._id);
 
-    // Set cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      maxAge: 3600 * 1000, // 1 hour in ms
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
 
     // Respond
     res.status(201).json({
@@ -80,13 +73,7 @@ export const login = expressAsyncHandler(async (req, res) => {
     // generate token
     const token = generateToken(user._id);
 
-    // set cookies
-    res.cookie("token", token, {
-      httpOnly: true,
-      maxAge: 3600 * 1000,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+
 
     // Responsed
     // Respond
@@ -106,14 +93,39 @@ export const login = expressAsyncHandler(async (req, res) => {
 
 export const logout = expressAsyncHandler(async (req, res) => {
   try {
-    // clear Cookie
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+   res.status(200).json({message:'Logout Successfull',success:true})
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 });
+
+
+// forgot password 
+export const forgotPassword = expressAsyncHandler(async(req,res)=>{
+try {
+  const {userId, oldPassword,newPassword, confirmNewPassword} = req.body;
+  
+  const user = await User.findById(userId)
+  if(!user){
+    return res.status(404).json({success:false,error:"User Not Found"})
+  }
+  const isMatch = await bcrypt.compare(oldPassword,user.password)
+  if(!isMatch){
+    return res.status(400).json({success:false,error:"Old Password Is Incorrect"})
+  }
+  if(newPassword !==confirmNewPassword){
+    return res.status(400).json({success:false,error:"Passwords Do Not Match"})
+  }
+  const hashedPassword = await bcrypt.hash(newPassword,10)
+  user.password=hashedPassword
+  await user.save()
+  res.status(200).json({ success:true,message:"Password Updated Successfully"}) 
+
+
+} catch (error) {
+  console.log(error);
+res.status(500).json({success:false,error:error.message})
+}
+}
+)

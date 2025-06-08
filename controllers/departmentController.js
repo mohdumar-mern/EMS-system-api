@@ -1,5 +1,8 @@
 import Department from "../models/departmentModel.js";
 import expressAsyncHandler from "express-async-handler";
+import Employee from "../models/employeeModel.js";
+import Leave from "../models/LeaveModel.js";
+import Salary from "../models/salaryModel.js";
 
 // Add department
 export const addDepartment = expressAsyncHandler(async (req, res) => {
@@ -15,7 +18,7 @@ export const addDepartment = expressAsyncHandler(async (req, res) => {
   const department = new Department({
     dep_name,
     description,
-    created_by: req.user._id, // Requires `protect` middleware
+    created_by: req.user._id,
   });
 
   const result = await department.save();
@@ -29,10 +32,7 @@ export const addDepartment = expressAsyncHandler(async (req, res) => {
 
 // Get all departments
 export const getAllDepartments = expressAsyncHandler(async (req, res) => {
-  const departments = await Department.find().populate(
-    "created_by",
-    "name email"
-  );
+  const departments = await Department.find().populate("created_by", "name email");
 
   if (!departments.length) {
     return res.status(404).json({
@@ -50,10 +50,7 @@ export const getAllDepartments = expressAsyncHandler(async (req, res) => {
 
 // Get single department by ID
 export const getDepartmentById = expressAsyncHandler(async (req, res) => {
-  const department = await Department.findById(req.params.id).populate(
-    "created_by",
-    "name email"
-  );
+  const department = await Department.findById(req.params.id).populate("created_by", "name email");
 
   if (!department) {
     return res.status(404).json({
@@ -95,7 +92,7 @@ export const updateDepartment = expressAsyncHandler(async (req, res) => {
 
 // Delete department by ID
 export const deleteDepartment = expressAsyncHandler(async (req, res) => {
-  const department = await Department.findByIdAndDelete(req.params.id);
+  const department = await Department.findById(req.params.id);
 
   if (!department) {
     return res.status(404).json({
@@ -104,8 +101,21 @@ export const deleteDepartment = expressAsyncHandler(async (req, res) => {
     });
   }
 
+  // Find all employees in this department
+  const employees = await Employee.find({ department: department._id });
+  const employeeIds = employees.map((emp) => emp._id);
+  const empIds = employees.map((emp) => emp.empId); // assuming `empId` is different from `_id`
+
+  // Delete related records
+  await Employee.deleteMany({ department: department._id });
+  await Leave.deleteMany({ employeeId: { $in: employeeIds } });
+  await Salary.deleteMany({ employeeId: { $in: empIds } });
+
+  // Delete the department itself
+  await department.deleteOne();
+
   res.json({
     success: true,
-    message: "Department deleted successfully",
+    message: "Department and related records deleted successfully",
   });
 });

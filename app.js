@@ -1,7 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import cookieParser from "cookie-parser";
 
 import connectDB from "./config/db.js";
 import adminRoutes from "./routes/adminRoute.js";
@@ -9,6 +8,8 @@ import userRoutes from "./routes/userRoute.js";
 import departmentRoutes from "./routes/departmentRoute.js";
 import employeeRoutes from "./routes/employeeRoute.js";
 import salaryRoutes from "./routes/salaryRoute.js";
+import leaveRoutes from "./routes/leaveRoute.js"; 
+import summaryRoutes from "./routes/summaryRoutes.js"; 
 
 dotenv.config();
 const app = express();
@@ -17,19 +18,20 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:5173", // adjust to your frontend URL
-  credentials: true // allow cookies from frontend
+  credentials: true 
 }));
-app.use(express.json()); // ✅ Built-in body parser for JSON
-app.use(express.urlencoded({ extended: true })); // ✅ Built-in body parser for forms
-app.use(cookieParser());
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true })); // 
 
 
 // API Routes
 app.use("/api/admin", adminRoutes);
-app.use("/api/user", userRoutes); // renamed to avoid conflict
+app.use("/api/user", userRoutes); 
 app.use("/api/department", departmentRoutes);
-app.use("/api/employee", employeeRoutes); // keep this for employee management
+app.use("/api/employee", employeeRoutes); 
 app.use("/api/salary", salaryRoutes);
+app.use("/api/leave", leaveRoutes); 
+app.use("/api/dashboard", summaryRoutes); 
 
 // Health Check
 app.get("/", (req, res) => res.send("API is running..."));

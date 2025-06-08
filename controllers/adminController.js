@@ -50,14 +50,6 @@ export const adminRegister = expressAsyncHandler(async (req, res) => {
     // Generate JWT token
     const token = generateToken(savedUser._id);
 
-    // Set cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      maxAge: 3600000, // 1 hour
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
-
     // Send response
     res.status(201).json({
       success: true,
@@ -81,7 +73,6 @@ export const adminRegister = expressAsyncHandler(async (req, res) => {
 
 // Admin Login
 export const adminLogin = expressAsyncHandler(async (req, res) => {
-  // console.log(req.body)
   try {
     const { email, password } = req.body;
 
@@ -114,27 +105,19 @@ export const adminLogin = expressAsyncHandler(async (req, res) => {
     // Generate token
     const token = generateToken(user._id);
 
-    // Set auth cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      maxAge: 3600 * 1000, // 1 hour
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
-
     // Respond with user info
     res.status(200).json({
       success: true,
       message: "Logged in successfully",
       token,
       user: {
+        id: user._id,
         name: user.name,
         email: user.email,
         profile: user.profile,
         role: user.role,
       },
     });
-
   } catch (error) {
     console.error("Admin Login Error:", error);
     res.status(500).json({
@@ -144,22 +127,15 @@ export const adminLogin = expressAsyncHandler(async (req, res) => {
   }
 });
 
-
 // Admin Logout
 export const adminLogout = expressAsyncHandler(async (req, res) => {
   try {
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
     res.json({ success: true, message: "Logged out successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 });
-
 
 // Get Admin Profile
 export const getAdminProfile = expressAsyncHandler(async (req, res) => {
@@ -183,5 +159,36 @@ export const getAdminProfile = expressAsyncHandler(async (req, res) => {
       success: false,
       error: "Internal Server Error",
     });
+  }
+});
+
+// forgot password
+export const adminForgotPassword = expressAsyncHandler(async (req, res) => {
+  try {
+    const {id} = req.params
+    const {  oldPassword, newPassword } = req.body;
+    console.log(req.body);
+
+    const user = await User.findById(id);
+    console.log(user)
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User Not Found" });
+    }
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Old Password Is Incorrect" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+    res
+      .status(200)
+      .json({ success: true, message: "Password Updated Successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
