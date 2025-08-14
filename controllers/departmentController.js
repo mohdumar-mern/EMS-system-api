@@ -1,7 +1,7 @@
 import Department from "../models/departmentModel.js";
 import expressAsyncHandler from "express-async-handler";
 import Employee from "../models/employeeModel.js";
-import Leave from "../models/LeaveModel.js";
+import Leave from "../models/leaveModel.js";
 import Salary from "../models/salaryModel.js";
 
 // ✅ Add Department

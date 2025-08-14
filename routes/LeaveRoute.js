@@ -9,7 +9,7 @@ import {
   getSingleLeaveById,
   getEmployeeLeavesByEmpId,
   updateLeaveStatus,
-} from "../controllers/LeaveController.js";
+} from "../controllers/leaveController.js";
 
 /**
  * @swagger

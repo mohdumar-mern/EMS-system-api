@@ -1,4 +1,4 @@
-import Leave from "../models/LeaveModel.js";
+import Leave from "../models/leaveModel.js";
 import expressAsyncHandler from "express-async-handler";
 import Employee from "../models/employeeModel.js";
 import mongoose from "mongoose";

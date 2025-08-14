@@ -2,7 +2,7 @@ import expressAsyncHandler from "express-async-handler";
 import Employee from "../models/employeeModel.js";
 import Department from "../models/departmentModel.js";
 import Salary from "../models/salaryModel.js";
-import Leave from "../models/LeaveModel.js";
+import Leave from "../models/leaveModel.js";
 
 // 📊 Admin Dashboard: Full Summary
 export const getSummary = expressAsyncHandler(async (req, res) => {

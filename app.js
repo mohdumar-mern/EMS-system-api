@@ -22,9 +22,10 @@ import userRoutes from "./routes/userRoute.js";
 import departmentRoutes from "./routes/departmentRoute.js";
 import employeeRoutes from "./routes/employeeRoute.js";
 import salaryRoutes from "./routes/salaryRoute.js";
-import leaveRoutes from "./routes/leaveRoute.js";
+import leaveRoutes from "./routes/leaveRoute.js"; // ✅ Make sure file name matches exactly
 import summaryRoutes from "./routes/summaryRoutes.js";
 import { globalLimiter } from "./middlewares/rateLimiter.js";
+import { keepAlive } from "./utils/keepAlive.js";
 
 dotenv.config();
 const app = express();
@@ -34,7 +35,7 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Content Security Policy (for Cloudinary image loading)
+// ✅ Content Security Policy
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
@@ -42,7 +43,6 @@ app.use((req, res, next) => {
   );
   next();
 });
-
 
 // ✅ Security Headers
 app.use(
@@ -52,11 +52,10 @@ app.use(
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      connectSrc: ["'self'", "http://localhost:5000", "https://res.cloudinary.com"],
+      connectSrc: ["'self'", process.env.FRONTEND_URL || "http://localhost:5173", "https://res.cloudinary.com"],
     },
   })
 );
-
 
 // ✅ Other Security Middlewares
 app.use(globalLimiter);
@@ -67,7 +66,7 @@ app.use(globalLimiter);
 // ✅ CORS
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
     optionsSuccessStatus: 200,
   })
@@ -93,12 +92,12 @@ app.use(compression());
 // ✅ Swagger API Docs
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// ✅ Health Check Route
+// ✅ Health Check
 app.get("/health", (req, res) => {
-  res.send("✅ API is running securely...");
+  res.send("API is running securely...");
 });
 
-// ✅ API Routes
+// API Routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/departments", departmentRoutes);
@@ -106,7 +105,6 @@ app.use("/api/employee", employeeRoutes);
 app.use("/api/salary", salaryRoutes);
 app.use("/api/leaves", leaveRoutes);
 app.use("/api/dashboard", summaryRoutes);
-
 
 // 404 Fallback
 app.use((req, res, next) => {
@@ -125,14 +123,29 @@ app.use((err, req, res, next) => {
   });
 });
 
-//  Connect to DB & Start Server
-connectDB(process.env.MONGO_URI)
-  .then(() => {
-    app.listen(PORT,'0.0.0.0', () => {
-      console.log(`🚀 Server running at ${PORT}`);
+// Connect to DB & Start Server
+// connectDB(process.env.MONGO_URI)
+//   .then(() => {
+//     app.listen(PORT, "0.0.0.0", () => {
+//       console.log(`🚀 Server running at ${PORT}`);
+//       keepAlive();
+//     });
+//   })
+//   .catch((err) => {
+//     logger.error("DB Connection Failed:", err);
+//     process.exit(1);
+//   });
+
+(async () => {
+  try {
+    await connectDB(process.env.MONGO_URI);
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      // keepAlive(); // Optional: Only if you're using uptime pings
     });
-  })
-  .catch((err) => {
-    logger.error(" DB Connection Failed:", err);
+  } catch (err) {
+    console.error('Failed to connect to database:', err.message);
     process.exit(1);
-  });
+  }
+})();
+
