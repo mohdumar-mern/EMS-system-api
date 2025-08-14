@@ -1,48 +1,68 @@
 import mongoose from "mongoose";
-import Employee from "./employeeModel.js";
-import Leave from "./LeaveModel.js";
-import Salary from "./salaryModel.js";
+import mongoosePaginate from "mongoose-paginate-v2";
 
+/**
+ * Department Schema
+ * Represents an organizational department.
+ */
 const departmentSchema = new mongoose.Schema(
   {
     dep_name: {
       type: String,
       required: [true, "Department name is required"],
       trim: true,
+      unique: true,
+      minlength: 2,
+      maxlength: 100,
     },
     description: {
       type: String,
       trim: true,
+      maxlength: 500,
     },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+    updated_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+      index: true, // 🔍 useful for soft delete queries
+    },
   },
   {
-    timestamps: true, // Automatically adds `createdAt` and `updatedAt`
+    timestamps: true,
+    versionKey: false, // 🛡️ disable __v field
   }
 );
 
-// departmentSchema.pre(
-//   "deleteOne",
-//   { document: true, query: true },
-//   async (next) => {
-//    try {
-//     const employee = Employee.find({ department: this._id });
-//     const employeeIds = employee.map((emp) => emp._id);
-//     const empIds = employee.map((emp) => emp.empId);
+// ✅ Compound index to prevent duplicates and optimize queries
+// departmentSchema.index({ dep_name: 1 }, { unique: true });
 
-//     await Employee.deleteMany({ department: this._id });
-//     await Leave.deleteMany({ employeeId: { $in: empIds } });
-//     await Salary.deleteMany({ employeeId: { $in: employeeIds } });
-//     next();
-//    } catch (error) {
-//     console.log(error)
-//    }
-//   }
-// );
+// 🔌 Plugins
+departmentSchema.plugin(mongoosePaginate);
+
+// 🚀 Optional: Configure default pagination behavior globally
+mongoosePaginate.paginate.options = {
+  lean: true,
+  leanWithId: false,
+  limit: 10,
+  customLabels: {
+    docs: "data",
+    totalDocs: "total",
+    limit: "limit",
+    page: "page",
+    totalPages: "totalPages",
+    nextPage: "next",
+    prevPage: "prev",
+  },
+};
+
 const Department = mongoose.model("Department", departmentSchema);
-
 export default Department;

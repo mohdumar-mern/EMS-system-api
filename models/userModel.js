@@ -5,11 +5,13 @@ const userSchema = mongoose.Schema(
     name: {
       type: String,
       required: [true, "Please add a username"],
+      trim: true,
     },
     email: {
       type: String,
       required: [true, "Please add an email"],
       unique: true,
+      lowercase: true,
     },
     password: {
       type: String,
@@ -20,11 +22,20 @@ const userSchema = mongoose.Schema(
       type: String,
       enum: ["admin", "employee", "manager"],
       default: "employee",
-      required: true,
     },
     profile: {
-      url: String,
-      public_id: String,
+      url: {
+        type: String,
+        default: "",
+      },
+      public_id: {
+        type: String,
+        default: "",
+      },
+    },
+    is_deleted: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

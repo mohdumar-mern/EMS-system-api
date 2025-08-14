@@ -12,7 +12,6 @@ const storage = new CloudinaryStorage({
 
 // Wrap multer's fileFilter for debugging
 const fileFilter = (req, file, cb) => {
-  console.log("Received file:", file.fieldname, file.originalname);
   cb(null, true); // Accept file
 };
 

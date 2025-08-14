@@ -4,116 +4,125 @@ import Employee from "../models/employeeModel.js";
 
 // ✅ Add Salary
 export const addSalary = expressAsyncHandler(async (req, res) => {
-  try {
-    const {
-      empId,
-      basicSalary,
-      allowances = "0",
-      deductions = "0",
-      payDate,
-    } = req.body;
+  const {
+    employeeId,
+    basicSalary,
+    allowances = 0,
+    deductions = 0,
+    payDate,
+  } = req.body;
 
-    const parsedBasic = parseInt(basicSalary) || 0;
-    const parsedAllowances = parseInt(allowances) || 0;
-    const parsedDeductions = parseInt(deductions) || 0;
-
-    const totalSalary = parsedBasic + parsedAllowances - parsedDeductions;
-
-    const salary = new Salary({
-      empId,
-      basicSalary: parsedBasic.toString(),
-      allowances: parsedAllowances.toString(),
-      deductions: parsedDeductions.toString(),
-      netSalary: totalSalary.toString(),
-      payDate: payDate || new Date(),
-    });
-
-    const savedSalary = await salary.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Salary added successfully",
-      salary: savedSalary,
-    });
-  } catch (error) {
-    console.error("Error adding salary:", error);
-    res.status(500).json({
+  const employee = await Employee.findById(employeeId);
+  if (!employee) {
+    return res.status(404).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Employee not found",
     });
   }
+
+  const parsedBasic = Number(basicSalary) || 0;
+  const parsedAllowances = Number(allowances) || 0;
+  const parsedDeductions = Number(deductions) || 0;
+
+  const totalSalary = parsedBasic + parsedAllowances - parsedDeductions;
+
+  const salary = new Salary({
+    employeeId,
+    basicSalary: parsedBasic,
+    allowances: parsedAllowances,
+    deductions: parsedDeductions,
+    netSalary: totalSalary,
+    payDate: payDate || new Date(),
+  });
+
+  const savedSalary = await salary.save();
+
+  res.status(201).json({
+    success: true,
+    message: "Salary added successfully",
+    salary: savedSalary,
+  });
 });
 
-// ✅ Get all Salaries
+// ✅ Get All Salaries with Pagination + Search
 export const getSalary = expressAsyncHandler(async (req, res) => {
-  try {
-    const salaries = await Salary.find().populate("empId", "emp_name email");
+  const { page = 1, limit = 6, search = "" } = req.query;
 
-    if (!salaries.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No salaries found",
-      });
-    }
+  const options = {
+    page: parseInt(page),
+    limit: parseInt(limit),
+    lean: true,
+    populate: {
+      path: "employeeId",
+      select: "emp_name empId designation department",
+      populate: { path: "department", select: "dep_name" },
+    },
+    sort: { payDate: -1 },
+  };
 
-    res.status(200).json({
-      success: true,
-      message: "Salaries fetched successfully",
-      salaries,
-    });
-  } catch (error) {
-    console.error("Error fetching salaries:", error);
-    res.status(500).json({
+  let query = {};
+
+  if (search) {
+    const employees = await Employee.find({
+      emp_name: { $regex: search, $options: "i" },
+    }).select("_id");
+
+    const empIds = employees.map(emp => emp._id);
+    query = { employeeId: { $in: empIds } };
+  }
+
+  const salaries = await Salary.paginate(query, options);
+
+  if (!salaries || salaries.data.length === 0) {
+    return res.status(404).json({
       success: false,
-      message: "Internal Server Error",
+      message: "No salaries found",
     });
   }
+
+  res.status(200).json({
+    success: true,
+    message: "Salaries fetched successfully",
+    ...salaries,
+  });
 });
 
-// ✅ Get Salary by Employee ID or userId
+// ✅ Get Salary by EmployeeId or UserId
 export const getSalaryByEmpId = expressAsyncHandler(async (req, res) => {
-  try {
-    const paramId = req.params.empId;
+  const { empId } = req.params;
 
-    // First, try to find salary by empId (ObjectId in Salary)
-    let salaries = await Salary.find({ empId: paramId })
-      .sort({ payDate: -1 })
-      .populate("empId", "emp_name email");
+  let employee = await Employee.findById(empId);
 
-    // If not found, maybe it's a userId => find employee by userId
-    if (!salaries.length) {
-      const employee = await Employee.findOne({ userId: paramId });
+  // If not found by Employee ID, try userId
+  if (!employee && empId.match(/^[0-9a-fA-F]{24}$/)) {
+    employee = await Employee.findOne({ userId: empId });
+  }
 
-      if (!employee) {
-        return res.status(404).json({
-          success: false,
-          message: "Employee not found with this ID",
-        });
-      }
-
-      // Now find salaries using employee._id
-      salaries = await Salary.find({ empId: employee.empId })
-        .sort({ payDate: -1 })
-        .populate("empId", "emp_name email");
-    }
-
-    if (!salaries.length) {
-      return res.status(404).json({
-        success: false,
-        message: "Salary not found for this employee",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: `Salary for employee ${paramId} retrieved successfully`,
-      salaries,
-    });
-  } catch (error) {
-    console.error("Error fetching salary by empId:", error);
-    res.status(500).json({
+  if (!employee) {
+    return res.status(404).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Employee not found",
     });
   }
+
+  const salaries = await Salary.find({ employeeId: employee._id })
+    .sort({ payDate: -1 })
+    .populate({
+      path: "employeeId",
+      select: "emp_name empId designation department",
+      populate: { path: "department", select: "dep_name" },
+    });
+
+  if (!salaries.length) {
+    return res.status(404).json({
+      success: false,
+      message: "No salaries found for this employee",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Salary records fetched successfully",
+    salaries,
+  });
 });
