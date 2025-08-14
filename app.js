@@ -22,8 +22,8 @@ import userRoutes from "./routes/userRoute.js";
 import departmentRoutes from "./routes/departmentRoute.js";
 import employeeRoutes from "./routes/employeeRoute.js";
 import salaryRoutes from "./routes/salaryRoute.js";
-import leaveRoutes from "./routes/leaveRoute.js"; // ✅ Make sure file name matches exactly
 import summaryRoutes from "./routes/summaryRoutes.js";
+import LeaveRoutes from "./routes/leaveRoute.js";
 import { globalLimiter } from "./middlewares/rateLimiter.js";
 import { keepAlive } from "./utils/keepAlive.js";
 
@@ -103,7 +103,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/salary", salaryRoutes);
-app.use("/api/leaves", leaveRoutes);
+app.use("/api/leaves", LeaveRoutes);
 app.use("/api/dashboard", summaryRoutes);
 
 // 404 Fallback
